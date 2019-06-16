@@ -4,40 +4,39 @@ const Router = require('koa-router')
 const app = new Koa()
 const router = new Router()
 const usersRouter = new Router({prefix: '/users'})
+const auth = async (ctx, next) => {
+  if (ctx.url !== '/users') {
+    ctx.throw(401);
+  }
+  await next()
+}
 
 router.get('/', ctx => {
   ctx.body = 'Index'
 })
 
-usersRouter.get('/', ctx => {
+usersRouter.get('/', auth, ctx => {
   ctx.body = 'User Index'
 })
 
-usersRouter.post('/', ctx => {
+usersRouter.post('/', auth, ctx => {
   ctx.body = 'User Post'
 })
 
-usersRouter.get('/:id', ctx => {
+usersRouter.put('/', auth, ctx => {
+  ctx.body = 'User Post'
+})
+
+usersRouter.delete('/', auth, ctx => {
+  ctx.status = 204
+})
+
+usersRouter.get('/:id', auth, ctx => {
   ctx.body = 'User ' + ctx.params.id
 })
 
 app.use(router.routes())
 app.use(usersRouter.routes())
-
-// custom router
-// app.use(async (ctx, next) => {
-//   if (ctx.url === '/') {
-//     if (ctx.method === 'GET') ctx.body='index#GET'
-//     else if (ctx.method === 'POST') ctx.body='index#POST'
-//     else ctx.status = 405
-//   }
-//   else if (ctx.url.match(/\/users\/\w+/)) {
-//     const userId = ctx.url.match(/\/users\/(\w+)/)[1];
-//     ctx.body = `User ${userId}`
-//   }
-//   else {
-//     ctx.status = 404
-//   }
-// })
+app.use(usersRouter.allowedMethods()) // not implemented methods will return 405
 
 app.listen(3001)
