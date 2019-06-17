@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app",
+    "start": "NODE_ENV=development nodemon app",
+    "prod": "NODE_ENV=production node app",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aaronguostudio",
@@ -12,6 +13,8 @@
   "dependencies": {
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
+    "koa-json-error": "^3.1.2",
+    "koa-parameter": "^3.0.1",
     "koa-router": "^7.4.0"
   },
   "devDependencies": {
