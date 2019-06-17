@@ -6,9 +6,9 @@ router.get('/', find)
 
 router.post('/', create)
 
-router.put('/', update)
+router.put('/:id', update)
 
-router.delete('/', remove)
+router.delete('/:id', remove)
 
 router.get('/:id', findById)
 
