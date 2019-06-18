@@ -8,7 +8,10 @@ class UsersCtrl {
   }
 
   async findById (ctx) {
-    const user = await User.findById(ctx.params.id)
+    const { fields } = ctx.query
+    const selectedFields = fields ? fields.split(';').filter(f => f).map(f => ' +' + f).join('') : ''
+    console.log('>selectedFields', selectedFields)
+    const user = await User.findById(ctx.params.id).select(selectedFields)
     if (!user) return ctx.throw(404)
     ctx.body = user
   }
@@ -35,10 +38,18 @@ class UsersCtrl {
     await next()
   }
 
+  // 可以不用做太深层的校验，否则代码太臃肿
   async update(ctx) {
     ctx.verifyParams({
       name: { type: 'string', required: false },
       password: {type: 'string', required: false},
+      avatar_url: { type: 'string', required: false },
+      gender: { type: 'string', required: false },
+      headline: { type: 'string', required: false },
+      locations: { type: 'array', itemType: 'string', required: false },
+      business: { type: 'string', required: false },
+      employments: { type: 'array', itemType: 'object', required: false },
+      educations: { type: 'array', itemType: 'object', required: false },
     })
     await User.findByIdAndUpdate( ctx.params.id, ctx.request.body )
     const user = await User.findById(ctx.params.id)
