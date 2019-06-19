@@ -1,6 +1,7 @@
 const User = require('../models/users')
 const jwt = require('jsonwebtoken')
 const { secret } = require('../config')
+const mongoose = require('mongoose')
 
 class UsersCtrl {
   async find (ctx) {
@@ -74,6 +75,46 @@ class UsersCtrl {
     const token = jwt.sign({ _id, name }, secret, { expiresIn: '2h' })
     ctx.body = { token }
   }
+
+  async listFollowing (ctx) {
+    const user = await User.findById(ctx.params.id).select('+following').populate('following')
+    if (!user) return ctx.throw(404)
+    ctx.body = user.following
+  }
+
+  async listFollowers (ctx) {
+    const users = await User.find({ following: ctx.params.id })
+    ctx.body = users
+  }
+
+  async checkUserExist (ctx, next) {
+    const user = await User.findById(ctx.params.id)
+    if (!user) return ctx.throw(404)
+    await next()
+  }
+
+  async follow (ctx) {
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    const me = await User.findById(ctx.state.user._id).select('+following')
+    if ( !me.following.includes( newId ) ) {
+      me.following.push(ctx.params.id)
+      me.save()
+    }
+    ctx.status = 204
+  }
+
+  async unfollow (ctx) {
+    const unfollowId = mongoose.Types.ObjectId( ctx.params.id )
+    const me = await User.findById(ctx.state.user._id).select('+following')
+    const index = me.following.indexOf(unfollowId)
+    console.log('>index', index)
+    if (index > -1) {
+      me.following.splice(index, 1)
+      me.save()
+    }
+    ctx.status = 204
+  }
+
 }
 
 module.exports = new UsersCtrl()
