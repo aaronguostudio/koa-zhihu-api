@@ -1,18 +1,31 @@
 const User = require('../models/users')
 const jwt = require('jsonwebtoken')
-const { secret } = require('../config')
+const { secret, minPerPage, defaultPerPage } = require('../config')
 const mongoose = require('mongoose')
 
 class UsersCtrl {
   async find (ctx) {
-    ctx.body = await User.find();
+    const { per_page = defaultPerPage } = ctx.query
+    const page = Math.max(ctx.query.page * 1, 1) - 1
+    const perPage = Math.max(per_page * 1, minPerPage)
+    ctx.body = await User
+                      .find({ name: new RegExp(ctx.query.q, 'i') })
+                      .limit(perPage)
+                      .skip(page * perPage)
   }
 
   async findById (ctx) {
     const { fields } = ctx.query
     const selectedFields = fields ? fields.split(';').filter(f => f).map(f => ' +' + f).join('') : ''
-    console.log('>selectedFields', selectedFields)
-    const user = await User.findById(ctx.params.id).select(selectedFields)
+    const populateStr = fields ? fields.split(';').filter(f => f).map(f => {
+      if (f === 'employments') return 'employments.company employments.job'
+      if (f === 'educations') return 'educations.school educations.major'
+      return f
+    }).join(' ') : ''
+    const user = await User
+                        .findById(ctx.params.id)
+                        .populate(populateStr)
+                        .select(selectedFields)
     if (!user) return ctx.throw(404)
     ctx.body = user
   }
@@ -107,12 +120,41 @@ class UsersCtrl {
     const unfollowId = mongoose.Types.ObjectId( ctx.params.id )
     const me = await User.findById(ctx.state.user._id).select('+following')
     const index = me.following.indexOf(unfollowId)
-    console.log('>index', index)
     if (index > -1) {
       me.following.splice(index, 1)
       me.save()
     }
     ctx.status = 204
+  }
+
+  async followTopic (ctx) {
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    const me = await User.findById(ctx.state.user._id).select('+followingTopics')
+    if ( !me.followingTopics.includes( newId ) ) {
+      me.followingTopics.push( ctx.params.id )
+      me.save()
+    }
+    ctx.status = 204
+  }
+
+  async unfollowTopic (ctx) {
+    const unfollowId = mongoose.Types.ObjectId( ctx.params.id )
+    const me = await User.findById(ctx.state.user._id).select('+followingTopics')
+    const index = me.followingTopics.indexOf(unfollowId)
+    if (index > -1) {
+      me.followingTopics.splice(index, 1)
+      me.save()
+    }
+    ctx.status = 204
+  }
+
+  async listFollowingTopics (ctx) {
+    const user = await User
+                        .findById(ctx.params.id)
+                        .select('+followingTopics')
+                        .populate('followingTopics')
+    if (!user) return ctx.throw(404)
+    ctx.body = user.followingTopics
   }
 
 }
