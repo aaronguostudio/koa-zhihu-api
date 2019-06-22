@@ -1,5 +1,6 @@
-const User = require('../models/users')
+const Answer = require('../models/answers')
 const Question = require('../models/questions')
+const User = require('../models/users')
 const jwt = require('jsonwebtoken')
 const { secret, minPerPage, defaultPerPage } = require('../config')
 const mongoose = require('mongoose')
@@ -161,6 +162,100 @@ class UsersCtrl {
   async listQuestions (ctx) {
     const questions = await Question.find({ questioner: ctx.params.id })
     ctx.body = questions
+  }
+
+  async listLikingAnswers (ctx) {
+    const user = await User.findById(ctx.params.id).select('+likingAnswers').populate('likingAnswers')
+    if (!user) return ctx.throw(404)
+    ctx.body = user.likingAnswers
+  }
+
+  async likeAnswer (ctx, next) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+likingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+
+    if (!me.likingAnswers.includes( newId )) {
+      me.likingAnswers.push(ctx.params.id)
+      me.save()
+      await Answer.findByIdAndUpdate(ctx.params.id, { $inc: { voteCount: 1 } })
+    }
+    ctx.status = 204
+    await next()
+  }
+
+  async unlikeAnswer (ctx) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+likingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    const index = me.likingAnswers.indexOf( newId)
+    if (index > -1) {
+      me.likingAnswers.splice(index, 1)
+      me.save()
+      await Answer.findByIdAndUpdate(ctx.params.id, { $inc: { voteCount: -1 } })
+    }
+    ctx.status = 204
+  }
+
+  async listDislikingAnswers (ctx) {
+    const user = await User.findById(ctx.params.id).select('+dislikingAnswers').populate('dislikingAnswers')
+    if (!user) return ctx.throw(404)
+    ctx.body = user.dislikingAnswers
+  }
+
+  async dislikeAnswer (ctx, next) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+dislikingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    if (!me.dislikingAnswers.includes( newId )) {
+      me.dislikingAnswers.push(ctx.params.id)
+      me.save()
+    }
+    ctx.status = 204
+    await next()
+  }
+
+  async undislikeAnswer (ctx) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+dislikingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    const index = me.dislikingAnswers.indexOf( newId)
+    if (index > -1) {
+      me.dislikingAnswers.splice(index, 1)
+      me.save()
+    }
+    ctx.status = 204
+  }
+
+  async listCollectiongAnswers (ctx) {
+    console.log('>>listCollectiongAnswers')
+    const user = await User.findById(ctx.params.id).select('+collectingAnswers').populate('collectingAnswers')
+    if (!user) return ctx.throw(404)
+    ctx.body = user.collectingAnswers
+  }
+
+  async collectAnswer (ctx, next) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+collectingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    if (!me.collectingAnswers.includes( newId )) {
+      me.collectingAnswers.push(ctx.params.id)
+      me.save()
+    }
+    ctx.status = 204
+    await next()
+  }
+
+  async uncollectAnswer (ctx) {
+    const uid = ctx.state.user._id
+    const me = await User.findById(uid).select('+collectingAnswers')
+    const newId = mongoose.Types.ObjectId( ctx.params.id )
+    const index = me.collectingAnswers.indexOf( newId)
+    if (index > -1) {
+      me.collectingAnswers.splice(index, 1)
+      me.save()
+    }
+    ctx.status = 204
   }
 
 }

@@ -24,7 +24,7 @@ class QuestionsCtrl {
 
   async checkQuestioner (ctx, next) {
     const { question } = ctx.state
-    if (question.questioner.toString() !== ctx.state.user._id) return ctx.throw(404)
+    if (question.questioner.toString() !== ctx.state.user._id) return ctx.throw(403)
     await next()
   }
 
