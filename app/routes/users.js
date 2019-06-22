@@ -3,7 +3,7 @@ const router = new Router({ prefix: '/users' })
 const {
   find, findById, create, update, remove, login, checkOwner,
   listFollowing, listFollowers, follow, unfollow, followTopic,
-  unfollowTopic, listFollowingTopics, checkUserExist
+  unfollowTopic, listFollowingTopics, checkUserExist, listQuestions
 } = require('../controllers/users')
 const { checkTopicExist } = require('../controllers/topics')
 const jwt = require('koa-jwt')
@@ -24,5 +24,6 @@ router.delete('/following/:id', auth, checkUserExist, unfollow)
 router.get('/:id/followingTopics', listFollowingTopics)
 router.put('/followingTopics/:id', auth, checkTopicExist, followTopic)
 router.delete('/followingTopics/:id', auth, checkTopicExist, unfollowTopic)
+router.get('/:id/questions', listQuestions)
 
 module.exports = router

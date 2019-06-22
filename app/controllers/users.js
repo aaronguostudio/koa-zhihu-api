@@ -1,4 +1,5 @@
 const User = require('../models/users')
+const Question = require('../models/questions')
 const jwt = require('jsonwebtoken')
 const { secret, minPerPage, defaultPerPage } = require('../config')
 const mongoose = require('mongoose')
@@ -155,6 +156,11 @@ class UsersCtrl {
                         .populate('followingTopics')
     if (!user) return ctx.throw(404)
     ctx.body = user.followingTopics
+  }
+
+  async listQuestions (ctx) {
+    const questions = await Question.find({ questioner: ctx.params.id })
+    ctx.body = questions
   }
 
 }

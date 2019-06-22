@@ -1,5 +1,6 @@
 const Topic = require('../models/topics')
 const User = require('../models/users')
+const Question = require('../models/questions')
 const { minPerPage, defaultPerPage } = require('../config')
 
 class TopicsCtrl {
@@ -14,8 +15,8 @@ class TopicsCtrl {
   }
 
   async findById (ctx) {
-    const { fields } = ctx.query
-    const selectFields = fields ? fields.split(';').filter(f => f).map(f => ' +' + f).join('') : ''
+    const { fields = '' } = ctx.query
+    const selectFields = fields.split(';').filter(f => f).map(f => ' +' + f).join('')
     const topic = await Topic.findById(ctx.params.id).select(selectFields)
     if (!topic) return ctx.throw(404)
     ctx.body = topic
@@ -52,6 +53,11 @@ class TopicsCtrl {
   async listFollowers (ctx) {
     const users = await User.find({ followingTopics: ctx.params.id })
     ctx.body = users
+  }
+
+  async listQuestions (ctx) {
+    const questions = await Question.find({ topics: ctx.params.id })
+    ctx.body = questions
   }
 }
 
